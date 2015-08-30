@@ -16,7 +16,7 @@ void RestoreCurrentDate(int &year, int &month, int &day);
 int GetValidInt(int min, int max);
 void DirectoryFiles();
 void DisplayVersion();
-void MaximizeWindow(int &horizontal, int &vertical);
+void MaximizeWindow();
 void ShowHelp();
 void ExitProgram();
 void AutoTests(int &year, int &month, int &day);
@@ -24,35 +24,31 @@ void AutoTests(int &year, int &month, int &day);
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
-    //set up date variables which will be default set to current date and can be custom-set and restored to default by user. Then display welcome and version.
-    int year = 0;
-    int month = 0;
-    int day = 0;
-    cout << "Welcome to potatOS!\n";
-    DisplayVersion();
-    //get and store screen resolution. The functions I've used to get resolution work (as the cout function below shows) but for some reason setting the window size won't work
-    int horizontal = 0;
-    int vertical = 0;
-    MaximizeWindow(horizontal, vertical);
-    cout << "Screen Resolution: " << horizontal << " X " << vertical << endl;
     //Call the AutoTests function to show some functionality automatically
-    AutoTests(year, month, day);
+    //AutoTests(year, month, day);
 
     InputLoop();
-    ExitProgram();
     return a.exec();
 }
 
+//a big loop set up to implement the command prompt, lets the user repeatedly enter in commands
 void InputLoop()
 {
+    //display a welcome message and the version number as well as set up the date variables and initialize them to the current date retrieved from the OS
+    cout << "Welcome to potatOS!\n";
+    DisplayVersion();
     int year;
     int month;
     int day;
     RestoreCurrentDate(year, month, day);
+
+    //The functions I've used to get resolution work but for some reason setting the window size won't work
+    MaximizeWindow();
+
     while (1)
     {
         string in;
-        cout << "Enter a command: ";
+        cout << "\nEnter a command: ";
         cin >> in;
         transform(in.begin(), in.end(), in.begin(), ::tolower);
         if (in.compare("version") == 0)
@@ -66,9 +62,9 @@ void InputLoop()
         else if (in.compare("setdate") == 0)
         {
             //Prompt the user to enter a custom date
-            day = GetValidInt(0,31);
+            day = GetValidInt(1,31);
             month = GetValidInt(1,12);
-            year = GetValidInt(0,9999);
+            year = GetValidInt(1,9999);
             DisplayDate(year, month, day);
         }
         else if (in.compare("restoredate") == 0)
@@ -97,7 +93,7 @@ void InputLoop()
 //Simple print date function
 void DisplayDate(int year, int month, int day)
 {
-    cout << "DATE:" << month << '-' << day << '-' << year << endl;
+    cout << "DATE:" << month << '-' << day << '-' << year << "\n\n";
 }
 
 //get current date info and set variable accordingly
@@ -166,13 +162,13 @@ void DisplayVersion()
 
 /*This code was borrowed from: http://stackoverflow.com/questions/8690619/how-to-get-screen-resolution-in-c
  * This function gets the resolution of the computer screen and sets the size but for some reason it won't work*/
-void MaximizeWindow(int &horizontal, int &vertical)
+void MaximizeWindow()
 {
    RECT screen;
    const HWND hDesktop = GetDesktopWindow();
    GetWindowRect(hDesktop, &screen);
-   horizontal = screen.right;
-   vertical = screen.bottom;
+   int horizontal = screen.right;
+   int vertical = screen.bottom;
 
    _COORD coord;
    coord.X = horizontal - 1;
@@ -187,6 +183,9 @@ void MaximizeWindow(int &horizontal, int &vertical)
    HANDLE Handle = GetStdHandle(STD_OUTPUT_HANDLE);
    SetConsoleScreenBufferSize(Handle, coord);
    SetConsoleWindowInfo(Handle, TRUE, &Rect);
+
+   //this print statement proves that the screen resolution values are accurately being attained
+   //cout << "Screen Resolution: " << horizontal << " X " << vertical << endl;
 }
 
 //display each valid user command as well as what they do
@@ -205,6 +204,27 @@ void ShowHelp()
 //Exits the program
 void ExitProgram()
 {
+    while (1)
+    {
+        string in;
+        cout << "\nARE YOU SURE YOU WISH TO EXIT?\n'y' or 'yes' will terminate the program\n'n' or 'no' will return back to the command prompt: ";
+        cin >> in;
+        transform(in.begin(), in.end(), in.begin(), ::tolower);
+        if (in.compare("yes") == 0 || in.compare("y") == 0)
+        {
+            break;
+        }
+        else if (in.compare("no") == 0 || in.compare("n") == 0)
+        {
+            cout << "==== PROGRAM EXIT ABORTED ====" << endl;
+            return;
+        }
+        else
+        {
+            cout << "ERROR: You have entered an invalid response." << endl;
+        }
+
+    }
     cout << "\n\n==== PROGRAM EXECUTION COMPLETE ====\n\n";
     exit(0);
 }
