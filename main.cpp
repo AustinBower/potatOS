@@ -136,8 +136,7 @@ void DirectoryFiles()
 {
     DIR *dir;
     struct dirent *ent;
-    //can't figure out how to get the filepath of the current directory but using an absolute filepath works
-    if ((dir = opendir ("C:/Users/Sam/Documents/GitHub/potatOS")) != NULL)
+    if ((dir = opendir ("../potatOS")) != NULL)
     {
       //print all the files and directories within directory
       cout << "\nDIRECTORY FILES: ";
