@@ -1,0 +1,30 @@
+0x587af40 has entered into the system
+TestProcess1 entered into the ready queue
+0x587bb68 has entered into the system
+A new process has entered the system -- TestProcess1 is running
+0x587bda0 has entered into the system
+A new process has entered the system -- TestProcess1 is running
+0x587bdd0 has entered into the system
+A new process has entered the system -- TestProcess1 is running
+0x587be00 has entered into the system
+A new process has entered the system -- TestProcess4 is running
+TestProcess5 is running
+TestProcess2 is running
+TestProcess4 is running
+TestProcess1 is running
+TestProcess1 completed execution
+TestProcess3 is running
+TestProcess5 is running
+TestProcess5 completed execution
+TestProcess2 is running
+TestProcess2 completed execution
+TestProcess4 is running
+TestProcess3 is running
+TestProcess4 is running
+TestProcess3 is running
+TestProcess3 completed execution
+TestProcess4 is running
+TestProcess4 is running
+TestProcess4 completed execution
+
+**EXECUTION COMPLETE**

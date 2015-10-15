@@ -1,0 +1,22 @@
+0x51af48 has entered into the system
+TestProcess1 entered into the ready queue
+0x51b960 has entered into the system
+TestProcess5 entered into the ready queue
+0x51bb98 has entered into the system
+TestProcess4 entered into the ready queue
+0x51bbc8 has entered into the system
+TestProcess2 entered into the ready queue
+0x51bbf8 has entered into the system
+TestProcess3 entered into the ready queue
+TestProcess1 is now running
+TestProcess1 completed execution
+TestProcess5 is now running
+TestProcess5 completed execution
+TestProcess4 is now running
+TestProcess4 completed execution
+TestProcess2 is now running
+TestProcess2 completed execution
+TestProcess3 is now running
+TestProcess3 completed execution
+
+**EXECUTION COMPLETE**

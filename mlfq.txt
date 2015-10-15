@@ -1,0 +1,38 @@
+TestProcess1 has entered into the system
+TestProcess5 has entered into the system
+TestProcess4 has entered into the system
+TestProcess2 has entered into the system
+TestProcess3 has entered into the system
+TestProcess1 is running with a current priority of 1
+TestProcess5 is running with a current priority of 1
+TestProcess4 is running with a current priority of 1
+Priorities for all processes reset to highest value
+TestProcess2 is running with a current priority of 1
+TestProcess3 is running with a current priority of 1
+TestProcess1 is running with a current priority of 1
+Priorities for all processes reset to highest value
+TestProcess5 is running with a current priority of 1
+TestProcess4 is running with a current priority of 1
+TestProcess2 is running with a current priority of 1
+TestProcess2 completed execution
+Priorities for all processes reset to highest value
+TestProcess3 is running with a current priority of 1
+TestProcess1 is running with a current priority of 1
+TestProcess5 is running with a current priority of 1
+Priorities for all processes reset to highest value
+TestProcess4 is running with a current priority of 1
+TestProcess3 is running with a current priority of 1
+TestProcess3 completed execution
+TestProcess1 is running with a current priority of 1
+Priorities for all processes reset to highest value
+TestProcess5 is running with a current priority of 1
+TestProcess5 completed execution
+TestProcess4 is running with a current priority of 1
+TestProcess1 is running with a current priority of 1
+TestProcess1 completed execution
+Priorities for all processes reset to highest value
+TestProcess4 is running with a current priority of 1
+TestProcess4 is running with a current priority of 2
+TestProcess4 completed execution
+
+**EXECUTION COMPLETE**

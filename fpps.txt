@@ -1,0 +1,21 @@
+TestProcess1 entered into the ready queue
+A new process has entered the system -- TestProcess1 is running
+TestProcess5 entered into the ready queue
+A new process has entered the system -- TestProcess1 is running
+TestProcess1 entered into the ready queue
+A new process has entered the system -- TestProcess4 is running
+TestProcess2 entered into the ready queue
+A new process has entered the system -- TestProcess4 is running
+TestProcess4 entered into the ready queue
+TestProcess3 is running
+TestProcess3 completed execution
+TestProcess4 is running
+TestProcess4 completed execution
+TestProcess1 is running
+TestProcess1 completed execution
+TestProcess5 is running
+TestProcess5 completed execution
+TestProcess2 is running
+TestProcess2 completed execution
+
+**EXECUTION COMPLETE**
