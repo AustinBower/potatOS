@@ -2067,7 +2067,7 @@ void Lottery(deque<struct PCB*> *ready)
                 {
                     break;
                 }
-                cout << "*ERROR: Invalid input, try again" << endl;
+                cout << "*ERROR: Input number invalid, try again" << endl;
             }while(1);
             do
             {
@@ -2082,7 +2082,7 @@ void Lottery(deque<struct PCB*> *ready)
                 {
                     break;
                 }
-                cout << "*ERROR: Invalid input, try again" << endl;
+                cout << "*ERROR: Input number invalid, try again" << endl;
             }while(1);
 
             //read in file line by line

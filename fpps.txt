@@ -1,10 +1,15 @@
+0x52abd0 has entered into the system
 TestProcess1 entered into the ready queue
+0x52ac00 has entered into the system
 A new process has entered the system -- TestProcess1 is running
 TestProcess5 entered into the ready queue
+0x52ac30 has entered into the system
 A new process has entered the system -- TestProcess1 is running
 TestProcess1 entered into the ready queue
+0x52ac60 has entered into the system
 A new process has entered the system -- TestProcess4 is running
 TestProcess2 entered into the ready queue
+0x52ac90 has entered into the system
 A new process has entered the system -- TestProcess4 is running
 TestProcess4 entered into the ready queue
 TestProcess3 is running

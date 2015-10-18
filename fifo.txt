@@ -1,12 +1,12 @@
-0x51af48 has entered into the system
+0x578aaa0 has entered into the system
 TestProcess1 entered into the ready queue
-0x51b960 has entered into the system
+0x578aad0 has entered into the system
 TestProcess5 entered into the ready queue
-0x51bb98 has entered into the system
+0x578ab00 has entered into the system
 TestProcess4 entered into the ready queue
-0x51bbc8 has entered into the system
+0x578ab30 has entered into the system
 TestProcess2 entered into the ready queue
-0x51bbf8 has entered into the system
+0x5789f40 has entered into the system
 TestProcess3 entered into the ready queue
 TestProcess1 is now running
 TestProcess1 completed execution
