@@ -54,6 +54,17 @@ void FixedPriority(deque<struct PCB*> *ready);
 void RoundRobin(deque<struct PCB*> *ready);
 void Multilevel(deque<struct PCB*> *ready);
 void Lottery(deque<struct PCB*> *ready);
+//PART 4 FUNCTIONS
+void ShowMemory(struct MemorySpace memory);
+void Coalesce(struct MemorySpace *memory);
+void Compact(struct MemorySpace *memory);
+//NOTE* the memory allocation algorithms have not been implemented with the schedulers, rather they only have a test function that proves each works
+//since i could not seem to get them to work right within the schedulers
+bool FirstFit(struct MemorySpace *memory, struct MemoryBlock *inBlock);
+bool NextFit(struct MemorySpace *memory, struct MemoryBlock *inBlock, int position);
+bool WorstFit(struct MemorySpace *memory, struct MemoryBlock *inBlock);
+bool BestFit(struct MemorySpace *memory, struct MemoryBlock *inBlock);
+void MemoryAllocation();
 
 struct PCB{
     string processName;
@@ -65,6 +76,19 @@ struct PCB{
     int timeRemaining;
     int timeOfArrival;
     int percentCPU;
+};
+
+struct MemoryBlock{
+    string processName;//stores process name that it is tied to so we know which block represents which process
+    int min;//once the block is placed in memory, this will hold its starting point
+    int max;//holds the total size of the block before it is place in memory so we know how much memory it needs, once placed it is changed to represent the ending point
+    bool free;//tells whether or not the process associated with this block is free
+};
+
+struct MemorySpace{
+    int min;
+    int max;
+    vector<struct MemoryBlock> occupiedMemory;
 };
 
 int main(int argc, char *argv[])
@@ -350,6 +374,10 @@ void InputLoop()
         {
             Lottery(&readyQueue);
         }
+        else if (in.compare("memorymethods") == 0)
+        {
+            MemoryAllocation();
+        }
         else
         {
             cout << "Invalid command (try 'help' for a list of valid commands)" << endl;
@@ -457,6 +485,7 @@ void ShowHelp()
     cout << "rr ------------- Performs the Round-Robin scheduler.\n";
     cout << "mlfq ----------- Performs the Multilevel Feecback Queue scheduler.\n";
     cout << "ls ------------- Performs the Lottery Scheduling scheduler.\n";
+    cout << "memorymethods -- Performs some memory allocation method tests.\n";
     cout << "exit ----------- Ends the current session and exits the OS.\n\n";
 }
 
@@ -989,7 +1018,6 @@ void FirstInFirstOut(deque<struct PCB*> *ready)
     ifstream inFile;
     string line = "";
     ofstream writeFile("C:/Users/Sam/Desktop/Github/potatOS/fifo.txt");
-
     string fileName;
     cout << "Enter the data file name : ";
     cin >> fileName;
@@ -1802,8 +1830,7 @@ void Multilevel(deque<struct PCB*> *ready)
     ifstream inFile;
     string line = "";
     ofstream writeFile("C:/Users/Sam/Desktop/Github/potatOS/mlfq.txt");
-    struct PCB* running;
-    struct PCB* previous;//previously inserted PCB, used to tell time of arrival differential
+
     //used for displaying/calculating execution information
     deque<struct PCB*> completedProcesses;
     int completion = 0; //total time to completion
@@ -2205,8 +2232,579 @@ void Lottery(deque<struct PCB*> *ready)
     writeFile.close();
 }
 
+//output free and taken memory
+void ShowMemory(struct MemorySpace memory)
+{
+    vector<struct MemoryBlock> allMemory = memory.occupiedMemory;
+    int previousMax = 0;
+    cout << "*****MEMORY SPACE*****" << endl;
+    cout << "+---------------------" << endl;
+    //if there are no blocks in memory
+    if (allMemory.size() == 0)
+    {
+        cout << "|  LOCATION: " << memory.min << endl;
+        cout << "|  FREE SPACE" << endl;
+        for (unsigned int i = 0; i < (memory.max / 40); i++)
+        {
+            cout << "|" << endl;
+        }
+        cout << "|  LOCATION: " << memory.max << endl;
+        cout << "+---------------------" << endl;
+        cout << "******END MEMORY******\n" << endl;
+    }
+    //else print all memory blocks
+    else
+    {
+        for (unsigned int i=0; i < allMemory.size(); i++)
+        {
+            struct MemoryBlock currentBlock = allMemory.at(i);
+            int difference;
+            if (currentBlock.min != previousMax)
+            {
+                //output free space before the next block
+                difference = currentBlock.min - previousMax;
+                cout << "|  LOCATION: " << previousMax << endl;
+                cout << "|  FREE SPACE" << endl;
+                for (unsigned int i = 0; i < (difference / 40); i++)
+                {
+                    cout << "|" << endl;
+                }
+                cout << "|  LOCATION: " << currentBlock.min << endl;
+                cout << "+---------------------" << endl;
+                //output current block space
+            }
+            difference = currentBlock.max - currentBlock.min;
+            cout << "|  LOCATION: " << currentBlock.min << endl;
+            cout << "|  NAME: " << currentBlock.processName << endl;
+            for (unsigned int i = 0; i < (difference / 40); i++)
+            {
+                cout << "|" << endl;
+            }
+            cout << "|  LOCATION: " << currentBlock.max << endl;
+            cout << "+---------------------" << endl;
+            previousMax = currentBlock.max;
+        }
+        cout << "|  LOCATION: " << previousMax << endl;
+        cout << "|  FREE SPACE" << endl;
+        for (unsigned int i = 0; i < ((memory.max - previousMax) / 40); i++)
+        {
+            cout << "|" << endl;
+        }
+        cout << "|  LOCATION: " << memory.max << endl;
+        cout << "+---------------------" << endl;
+        cout << "******END MEMORY******\n" << endl;
+    }
+}
 
+//coalescing algorithm
+void Coalesce(struct MemorySpace *memory)
+{
+    //since each memory block has a variable to tell whether or not it should be free all this needs to do is go through the list of memory blocks and remove those with the free variable set to true
+    for (unsigned int i = 0; i < memory->occupiedMemory.size(); i++)
+    {
+        struct MemoryBlock current = memory->occupiedMemory.at(i);
+        if (current.free == true)
+        {
+            memory->occupiedMemory.erase(memory->occupiedMemory.begin() + i);
+        }
+    }
+}
 
+//compaction algorithm
+void Compact(struct MemorySpace *memory)
+{
+    //this just goes through the vector of memory blocks and sets the first block's min to location 0 and then aligns the rest contiguously
+    int previousMax = 0;
+    for (unsigned int i =0; i < memory->occupiedMemory.size(); i++)
+    {
+        struct MemoryBlock current = memory->occupiedMemory.at(i);
+        if (current.min != previousMax)
+        {
+            memory->occupiedMemory.erase(memory->occupiedMemory.begin() + i);
+            int difference = current.max - current.min;
+            current.min = previousMax;
+            current.max = current.min + difference;
+            memory->occupiedMemory.insert(memory->occupiedMemory.begin() + i, current);
+        }
+        previousMax = current.max;
+    }
+}
+
+//first fit memory allocation
+bool FirstFit(struct MemorySpace *memory, struct MemoryBlock *inBlock)
+{
+    bool canFit = false;
+    int previousMax = 0;
+    for (unsigned int i =0; i < memory->occupiedMemory.size(); i++)
+    {
+        struct MemoryBlock current = memory->occupiedMemory.at(i);
+        int difference = current.min - previousMax;
+        if (inBlock->max < difference)
+        {
+            inBlock->min = previousMax;
+            inBlock->max = inBlock->max + previousMax;
+            memory->occupiedMemory.insert(memory->occupiedMemory.begin() + i, *inBlock);
+            canFit = true;
+            return canFit;
+        }
+        previousMax = current.max;
+    }
+    int difference = memory->max - previousMax;
+    if (inBlock->max < difference)
+    {
+        inBlock->min = previousMax;
+        inBlock->max = inBlock->max + previousMax;
+        memory->occupiedMemory.push_back(*inBlock);
+        canFit = true;
+    }
+    return canFit;
+}
+//next fit memory allocation
+//NOTE* for some reason this method is not working properly,
+bool NextFit(struct MemorySpace *memory, struct MemoryBlock *inBlock, int position)
+{
+    bool canFit = false;
+    int previousMax = 0;
+    if (memory->occupiedMemory.size() == 0)
+    {
+        inBlock->min = 0;
+        memory->occupiedMemory.push_back(*inBlock);
+        canFit = true;
+        return canFit;
+    }
+    for (unsigned int i = position; i < memory->occupiedMemory.size(); i++)
+    {
+        struct MemoryBlock current = memory->occupiedMemory.at(i);
+        int difference = current.min - previousMax;
+        if (inBlock->max < difference)
+        {
+            inBlock->min = previousMax;
+            inBlock->max = inBlock->max + previousMax;
+            memory->occupiedMemory.insert(memory->occupiedMemory.begin() + i, *inBlock);
+            canFit = true;
+            return canFit;
+        }
+        previousMax = current.max;
+    }
+    struct MemoryBlock end = memory->occupiedMemory.back();
+    int difference = memory->max - end.max;
+    if (inBlock->max < difference)
+    {
+        inBlock->min = end.max;
+        inBlock->max = inBlock->max + end.max;
+        memory->occupiedMemory.push_back(*inBlock);
+        canFit = true;
+        return canFit;
+    }
+    if (canFit == false)
+    {
+        for (unsigned int i = 0; i < position; i++)
+        {
+            struct MemoryBlock current = memory->occupiedMemory.at(i);
+            int difference = current.min - previousMax;
+            if (inBlock->max < difference)
+            {
+                inBlock->min = previousMax;
+                inBlock->max = inBlock->max + previousMax;
+                memory->occupiedMemory.insert(memory->occupiedMemory.begin() + i, *inBlock);
+                canFit = true;
+                return canFit;
+            }
+            previousMax = current.max;
+        }
+    }
+    return canFit;
+}
+
+//worst fit memory allocation
+bool WorstFit(struct MemorySpace *memory, struct MemoryBlock *inBlock)
+{
+    bool canFit;
+    //if there is nothing in memory, start at position 0
+    if (memory->occupiedMemory.size() == 0)
+    {
+        inBlock->min = 0;
+        memory->occupiedMemory.push_back(*inBlock);
+        inBlock->min = 0;
+        canFit = true;
+        return canFit;
+    }
+    //find all free spaces
+    vector<struct MemoryBlock> freeBlocks;
+    int previousMax = 0;
+    for (unsigned int i=0; i < memory->occupiedMemory.size(); i++)
+    {
+        struct MemoryBlock currentBlock = memory->occupiedMemory.at(i);
+        if (currentBlock.min != previousMax)
+        {
+            struct MemoryBlock freeSpace;
+            freeSpace.min = previousMax;
+            freeSpace.max = currentBlock.min;
+            freeBlocks.push_back(freeSpace);
+        }
+        previousMax = currentBlock.max;
+    }
+    if (previousMax != memory->max)
+    {
+        struct MemoryBlock freeSpace;
+        freeSpace.min = previousMax;
+        freeSpace.max = memory->max;
+        freeBlocks.push_back(freeSpace);
+    }
+    //go through all free spaces and find the biggest
+    struct MemoryBlock biggest;
+    biggest.min = 0;
+    biggest.max = 0;
+    for (unsigned int i = 0; i < freeBlocks.size(); i++)
+    {
+        struct MemoryBlock current = freeBlocks.at(i);
+        if ((current.max - current.min) > (biggest.max - biggest.min))
+        {
+            biggest.min = current.min;
+            biggest.max = current.max;
+        }
+    }
+    //now that we have the biggest free space, check to see if it is big enough for our process and insert it if so
+    for (unsigned int i = 0; i < memory->occupiedMemory.size(); i++)
+    {
+        struct MemoryBlock current = memory->occupiedMemory.at(i);
+        if (current.max == biggest.min)
+        {
+            if (inBlock->max < (biggest.max - biggest.min))
+            {
+                inBlock->min = biggest.min;
+                inBlock->max = inBlock->max + inBlock->min;
+                memory->occupiedMemory.insert(memory->occupiedMemory.begin() + i + 1, *inBlock);
+                canFit = true;
+                return canFit;
+            }
+            else
+            {
+                return canFit;
+            }
+        }
+    }
+    return canFit;
+}
+
+//best fit memory allocation
+bool BestFit(struct MemorySpace *memory, struct MemoryBlock *inBlock)
+{
+    bool canFit;
+    //if there is nothing in memory, start at position 0
+    if (memory->occupiedMemory.size() == 0)
+    {
+        inBlock->min = 0;
+        memory->occupiedMemory.push_back(*inBlock);
+        inBlock->min = 0;
+        canFit = true;
+        return canFit;
+    }
+    //find all free spaces
+    vector<struct MemoryBlock> freeBlocks;
+    int previousMax = 0;
+    for (unsigned int i=0; i < memory->occupiedMemory.size(); i++)
+    {
+        struct MemoryBlock currentBlock = memory->occupiedMemory.at(i);
+        if (currentBlock.min != previousMax)
+        {
+            struct MemoryBlock freeSpace;
+            freeSpace.min = previousMax;
+            freeSpace.max = currentBlock.min;
+            freeBlocks.push_back(freeSpace);
+        }
+        previousMax = currentBlock.max;
+    }
+    if (previousMax != memory->max)
+    {
+        struct MemoryBlock freeSpace;
+        freeSpace.min = previousMax;
+        freeSpace.max = memory->max;
+        freeBlocks.push_back(freeSpace);
+    }
+    //go through all free spaces and find the smallest
+    struct MemoryBlock smallest;
+    struct MemoryBlock firstFree = freeBlocks.front();
+    smallest.min = firstFree.min;
+    smallest.max = firstFree.max;
+    for (unsigned int i = 0; i < freeBlocks.size(); i++)
+    {
+        struct MemoryBlock current = freeBlocks.at(i);
+        if ((current.max - current.min) < (smallest.max - smallest.min))
+        {
+            smallest.min = current.min;
+            smallest.max = current.max;
+        }
+    }
+    //now that we have the biggest free space, check to see if it is big enough for our process and insert it if so
+    for (unsigned int i = 0; i < memory->occupiedMemory.size(); i++)
+    {
+        struct MemoryBlock current = memory->occupiedMemory.at(i);
+        if (current.max == smallest.min)
+        {
+            if (inBlock->max < (smallest.max - smallest.min))
+            {
+                inBlock->min = smallest.min;
+                inBlock->max = inBlock->max + inBlock->min;
+                memory->occupiedMemory.insert(memory->occupiedMemory.begin() + i + 1, *inBlock);
+                canFit = true;
+                return canFit;
+            }
+            else
+            {
+                return canFit;
+            }
+        }
+    }
+    return canFit;
+}
+
+//function to test/display the functionality of the memory allocation methods
+void MemoryAllocation()
+{
+    //set up memory space and display empty memory
+    struct MemorySpace allMemory;
+    allMemory.min = 0;
+    allMemory.max = 1024;
+    ShowMemory(allMemory);
+/*
+    //each algorithm has its own section with memory being displayed each time. multiline comments can be used to show only one algorithm's information
+//--------------------------------------------------------------------
+    //display functionality of coalescing algorithm
+    cout << "  //COALESCING ALGORITHM TEST//" << endl;
+    struct MemoryBlock a;
+    a.min = 10;
+    a.max = 300;
+    a.processName = "a";
+    a.free = false;
+    allMemory.occupiedMemory.push_back(a);
+    a.min = 300;
+    a.max = 350;
+    a.processName = "";
+    a.free = true;
+    allMemory.occupiedMemory.push_back(a);
+    a.min = 500;
+    a.max = 800;
+    a.processName = "b";
+    a.free = false;
+    allMemory.occupiedMemory.push_back(a);
+    a.min = 850;
+    a.max = 1000;
+    a.processName = "c";
+    a.free = false;
+    allMemory.occupiedMemory.push_back(a);
+    ShowMemory(allMemory);
+    Coalesce(&allMemory);
+    ShowMemory(allMemory);
+    allMemory.occupiedMemory.clear();
+    cout << "  //END COALESCING ALGORITHM TEST//\n" << endl;
+//--------------------------------------------------------------------
+    //display functionality of compaction algorithm
+    cout << "  //COMPACTION ALGORITHM TEST//" << endl;
+    a.min = 10;
+    a.max = 300;
+    a.processName = "a";
+    a.free = false;
+    allMemory.occupiedMemory.push_back(a);
+    a.min = 500;
+    a.max = 800;
+    a.processName = "b";
+    a.free = false;
+    allMemory.occupiedMemory.push_back(a);
+    a.min = 850;
+    a.max = 1000;
+    a.processName = "c";
+    a.free = false;
+    allMemory.occupiedMemory.push_back(a);
+    ShowMemory(allMemory);
+    Compact(&allMemory);
+    ShowMemory(allMemory);
+    allMemory.occupiedMemory.clear();
+    cout << "  //END COMPACTION ALGORITHM TEST//\n" << endl;
+//-------------------------------------------------------------------
+    //display functionality of first fit allocation
+    cout << "  //FIRST FIT ALGORITHM TEST//\n" << endl;
+    string name = "";
+    int sizeIncrease = 0;
+    for (unsigned int i = 0; i < 6; i++)
+    {
+        struct MemoryBlock block;
+        block.max = 200 + sizeIncrease;
+        sizeIncrease = sizeIncrease + 10;//makes each consecutive block a little bit bigger
+        block.free = false;
+        name = name + "I";
+        block.processName = name;
+        while (1)
+        {
+            //check to see if the new block can fit inside of memory
+            if (FirstFit(&allMemory, &block) == false)
+            {
+                //if not, try to coalesce and check again
+                Coalesce(&allMemory);
+                if (FirstFit(&allMemory, &block) == false)
+                {
+                    //if coalesce doesn't work, try to compact and check again
+                    Compact(&allMemory);
+                    if (FirstFit(&allMemory, &block) == false)
+                    {
+                        //if nothing else works, set the first block to free (this will simulate a process completing thus setting it's free variable to true)
+                        struct MemoryBlock toFree = allMemory.occupiedMemory.at(1);
+                        toFree.free = true;
+                        allMemory.occupiedMemory.erase(allMemory.occupiedMemory.begin());
+                        allMemory.occupiedMemory.insert(allMemory.occupiedMemory.begin(), toFree);
+                    }
+                    else break;
+                }
+                else break;
+            }
+            else break;
+        }
+        ShowMemory(allMemory);
+    }
+    allMemory.occupiedMemory.clear();
+    cout << "  //END FIRST FIT ALGORITHM TEST//\n" << endl;
+//-------------------------------------------------------------------
+    //display functionality for the next fit allocation
+    //for some reason this method is not working properly
+    cout << "  //NEXT FIT ALGORITHM TEST//\n" << endl;
+    string name = "";
+    int sizeIncrease = 0;
+    int position = 0;
+    for (unsigned int i = 0; i < 6; i++)
+    {
+        struct MemoryBlock block;
+        block.max = 200 + sizeIncrease;
+        sizeIncrease = sizeIncrease + 10;//makes each consecutive block a little bit bigger
+        block.free = false;
+        name = name + "I";
+        block.processName = name;
+        while (1)
+        {
+            //check to see if the new block can fit inside of memory
+            if (NextFit(&allMemory, &block, position) == false)
+            {
+                //if not, try to coalesce and check again
+                Coalesce(&allMemory);
+                if (NextFit(&allMemory, &block, position) == false)
+                {
+                    //if coalesce doesn't work, try to compact and check again
+                    Compact(&allMemory);
+                    if (NextFit(&allMemory, &block, position) == false)
+                    {
+                        //if nothing else works, set the first block to free (this will simulate a process completing thus setting it's free variable to true)
+                        struct MemoryBlock toFree = allMemory.occupiedMemory.at(1);
+                        toFree.free = true;
+                        allMemory.occupiedMemory.erase(allMemory.occupiedMemory.begin());
+                        allMemory.occupiedMemory.insert(allMemory.occupiedMemory.begin(), toFree);
+                    }
+                    else break;
+                }
+                else break;
+            }
+            else break;
+        }
+        //this is used to update the position variable. i tried passing a pointer into the function to alter this variable within there but kept getting errors
+        for (int i = 0; i < allMemory.occupiedMemory.size(); i++)
+        {
+            struct MemoryBlock current = allMemory.occupiedMemory.at(i);
+            if (block.processName == current.processName)
+            {
+                position = i;
+                break;
+            }
+        }
+        ShowMemory(allMemory);
+    }
+    allMemory.occupiedMemory.clear();
+    cout << "  //END NEXT FIT ALGORITHM TEST//\n" << endl;
+//-------------------------------------------------------------------
+    //display functionality for the worst fit allocation
+    cout << "  //WORST FIT ALGORITHM TEST//\n" << endl;
+    string name = "";
+    int sizeIncrease = 0;
+    for (unsigned int i = 0; i < 6; i++)
+    {
+        struct MemoryBlock block;
+        block.max = 200 + sizeIncrease;
+        sizeIncrease = sizeIncrease + 10;//makes each consecutive block a little bit bigger
+        block.free = false;
+        name = name + "I";
+        block.processName = name;
+        while (1)
+        {
+            //check to see if the new block can fit inside of memory
+            if (WorstFit(&allMemory, &block) == false)
+            {
+                //if not, try to coalesce and check again
+                Coalesce(&allMemory);
+                if (WorstFit(&allMemory, &block) == false)
+                {
+                    //if coalesce doesn't work, try to compact and check again
+                    Compact(&allMemory);
+                    if (WorstFit(&allMemory, &block) == false)
+                    {
+                        //if nothing else works, set the second first to free (this will simulate a process completing thus setting it's free variable to true)
+                        struct MemoryBlock toFree = allMemory.occupiedMemory.at(0);
+                        toFree.free = true;
+                        allMemory.occupiedMemory.erase(allMemory.occupiedMemory.begin());
+                        allMemory.occupiedMemory.insert(allMemory.occupiedMemory.begin(), toFree);
+                    }
+                    else break;
+                }
+                else break;
+            }
+            else break;
+        }
+        ShowMemory(allMemory);
+    }
+    allMemory.occupiedMemory.clear();
+    cout << "  //END WORST FIT ALGORITHM TEST//\n" << endl;
+
+//-------------------------------------------------------------------
+    //display functionality for the best fit allocation
+    cout << "  //BEST FIT ALGORITHM TEST//\n" << endl;
+    string name = "";
+    int sizeIncrease = 0;
+    for (unsigned int i = 0; i < 6; i++)
+    {
+        struct MemoryBlock block;
+        block.max = 200 + sizeIncrease;
+        sizeIncrease = sizeIncrease + 10;//makes each consecutive block a little bit bigger
+        block.free = false;
+        name = name + "I";
+        block.processName = name;
+        while (1)
+        {
+            //check to see if the new block can fit inside of memory
+            if (BestFit(&allMemory, &block) == false)
+            {
+                //if not, try to coalesce and check again
+                Coalesce(&allMemory);
+                if (BestFit(&allMemory, &block) == false)
+                {
+                    //if coalesce doesn't work, try to compact and check again
+                    Compact(&allMemory);
+                    if (BestFit(&allMemory, &block) == false)
+                    {
+                        //if nothing else works, set the second first to free (this will simulate a process completing thus setting it's free variable to true)
+                        struct MemoryBlock toFree = allMemory.occupiedMemory.at(0);
+                        toFree.free = true;
+                        allMemory.occupiedMemory.erase(allMemory.occupiedMemory.begin());
+                        allMemory.occupiedMemory.insert(allMemory.occupiedMemory.begin(), toFree);
+                    }
+                    else break;
+                }
+                else break;
+            }
+            else break;
+        }
+        ShowMemory(allMemory);
+    }
+    allMemory.occupiedMemory.clear();
+    allMemory.occupiedMemory.clear();
+    cout << "  //END BEST FIT ALGORITHM TEST//\n" << endl;
+    */
+}
 
 
 
